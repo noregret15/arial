@@ -243,18 +243,11 @@ function Library:GetContrastColor(Color)
     return Color3.fromHSV(H, S, (V > 0.5 and 0) or 1)
 end
 
-function Library:GiveSignal(Signal)
-    if not typeof(Signal) == 'RBXScriptSignal' then
-        return
+function Library:GiveSignal(Connection)
+    if typeof(Connection) == 'RBXScriptConnection' then
+        table.insert(Library.Signals, Connection);
+        return Connection;
     end
-
-    local Connection = Signal:Connect(function(...)
-        Library:SafeCallback(Signal, ...);
-    end)
-
-    table.insert(Library.Signals, Connection);
-
-    return Connection;
 end
 
 function Library:Unload()
@@ -266,7 +259,7 @@ function Library:OnUnload(Callback)
     Library.UnloadCallback = Callback
 end
 
-Library:GiveSignal(ScreenGui.DescendantRemoving:Connect(function(Instance)
+local DescendantConnection = Library:GiveSignal(ScreenGui.DescendantRemoving:Connect(function(Instance)
     if Library.RegistryMap[Instance] then
         Library:RemoveFromRegistry(Instance);
     end;
@@ -831,7 +824,7 @@ do
             end);
         end;
 
-        Library:GiveSignal(InputService.InputBegan:Connect(function(Input)
+        local InputBeganConnection = Library:GiveSignal(InputService.InputBegan:Connect(function(Input)
             if Input.UserInputType == Enum.UserInputType.MouseButton1 then
                 local AbsPos, AbsSize = PickerFrameOuter.AbsolutePosition, PickerFrameOuter.AbsoluteSize;
 
@@ -852,6 +845,9 @@ do
                 end
             end
         end))
+
+        Library:Unload(InputBeganConnection)
+        Library:Unload(DescendantConnection)
 
         ColorPicker:Display();
         ColorPicker.DisplayFrame = DisplayFrame
@@ -1150,7 +1146,7 @@ do
             end;
         end);
 
-        Library:GiveSignal(InputService.InputBegan:Connect(function(Input, Processed)
+        local InputBeganConnection = Library:GiveSignal(InputService.InputBegan:Connect(function(Input, Processed)
             if not Library:MouseIsOverOpenedFrame() and not ModeSelectOuter.Visible then
                 if KeyPicker:GetState() then
                     if Input.UserInputType == Enum.UserInputType.Keyboard then
@@ -1174,7 +1170,7 @@ do
             end;
         end));
 
-        Library:GiveSignal(InputService.InputEnded:Connect(function(Input)
+    local InputEndedConnection = Library:GiveSignal(InputService.InputEnded:Connect(function(Input)
             if KeyPicker.Mode == 'Hold' then
                 if KeyPicker.Value and not Library:MouseIsOverOpenedFrame() then
                     if Input.KeyCode == Enum.KeyCode[KeyPicker.Value] or (KeyPicker.Value == 'MouseLeft' and Input.UserInputType == Enum.UserInputType.MouseButton1) or (KeyPicker.Value == 'MouseRight' and Input.UserInputType == Enum.UserInputType.MouseButton2) then
@@ -1185,6 +1181,9 @@ do
                 end;
             end;
         end));
+
+        Library:Unload(InputBeganConnection)
+        Library:Unload(InputEndedConnection)
 
         KeyPicker:Update();
         KeyPicker:Show();
@@ -2703,7 +2702,7 @@ function Library:CreateWindow(...)
         Fading = false;
     end
 
-    Library:GiveSignal(InputService.InputBegan:Connect(function(Input, Processed)
+    local InputBeganConnection = Library:GiveSignal(InputService.InputBegan:Connect(function(Input, Processed)
         if type(Library.ToggleKeybind) == 'table' and Library.ToggleKeybind.Type == 'KeyPicker' then
             if Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode.Name == Library.ToggleKeybind.Value then
                 task.spawn(Library.Toggle)
@@ -2712,6 +2711,8 @@ function Library:CreateWindow(...)
             task.spawn(Library.Toggle)
         end
     end))
+
+    Library:Unload(InputBeganConnection)
 
     if Config.AutoShow then task.spawn(Library.Toggle) end
 
