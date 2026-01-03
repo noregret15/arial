@@ -9,10 +9,7 @@ local RenderStepped = RunService.RenderStepped;
 local LocalPlayer = Players.LocalPlayer;
 local Mouse = LocalPlayer:GetMouse();
 
-local ProtectGui = protectgui or (syn and syn.protect_gui) or (function() end);
-
 local ScreenGui = Instance.new('ScreenGui');
-ProtectGui(ScreenGui);
 
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global;
 ScreenGui.Parent = CoreGui;
@@ -2057,7 +2054,19 @@ do
 
         return Dropdown;
     end;
-
+    
+    function Funcs:AddBlank(Size)
+        local Groupbox = self;
+        local Container = Groupbox.Container;
+        
+        Library:Create('Frame', {
+            BackgroundTransparency = 1;
+            Size = UDim2.new(1, 0, 0, Size);
+            ZIndex = 5;
+            Parent = Container;
+        });
+    end;
+    
     BaseGroupbox.__namecall = function(Table, Key, ...)
         return Funcs[Key](...);
     end;
